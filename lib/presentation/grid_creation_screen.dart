@@ -25,9 +25,9 @@ class _GridCreationScreenState extends State<GridCreationScreen> {
     int m = widget.gridData.length;
     int n = widget.gridData[0].length;
     List<List<bool>> highlightGrid =
-        List.generate(m, (_) => List.filled(n, false));
+    List.generate(m, (_) => List.filled(n, false));
 
-    /// Search grid data - left to right
+    /// Search grid data - left to right (east)
     for (int i = 0; i < m; i++) {
       for (int j = 0; j <= n - word.length; j++) {
         if (widget.gridData[i].sublist(j, j + word.length).join('') == word) {
@@ -39,38 +39,34 @@ class _GridCreationScreenState extends State<GridCreationScreen> {
       }
     }
 
-    /// Search grid data - top to bottom
-    if (!found) {
-      for (int i = 0; i <= m - word.length; i++) {
-        for (int j = 0; j < n; j++) {
-          List<String> columnValues = [];
+    /// Search grid data - top to bottom (south)
+    for (int i = 0; i <= m - word.length; i++) {
+      for (int j = 0; j < n; j++) {
+        List<String> columnValues = [];
+        for (int k = i; k < i + word.length; k++) {
+          columnValues.add(widget.gridData[k][j]);
+        }
+        if (columnValues.join('') == word) {
           for (int k = i; k < i + word.length; k++) {
-            columnValues.add(widget.gridData[k][j]);
+            highlightGrid[k][j] = true;
           }
-          if (columnValues.join('') == word) {
-            for (int k = i; k < i + word.length; k++) {
-              highlightGrid[k][j] = true;
-            }
-            found = true;
-          }
+          found = true;
         }
       }
     }
 
-    /// Search grid data - diagonal
-    if (!found) {
-      for (int i = 0; i <= m - word.length; i++) {
-        for (int j = 0; j <= n - word.length; j++) {
-          List<String> diagonalValues = [];
+    /// Search grid data - diagonal (south-east)
+    for (int i = 0; i <= m - word.length; i++) {
+      for (int j = 0; j <= n - word.length; j++) {
+        List<String> diagonalValues = [];
+        for (int k = 0; k < word.length; k++) {
+          diagonalValues.add(widget.gridData[i + k][j + k]);
+        }
+        if (diagonalValues.join('') == word) {
           for (int k = 0; k < word.length; k++) {
-            diagonalValues.add(widget.gridData[i + k][j + k]);
+            highlightGrid[i + k][j + k] = true;
           }
-          if (diagonalValues.join('') == word) {
-            for (int k = 0; k < word.length; k++) {
-              highlightGrid[i + k][j + k] = true;
-            }
-            found = true;
-          }
+          found = true;
         }
       }
     }
@@ -81,12 +77,57 @@ class _GridCreationScreenState extends State<GridCreationScreen> {
     });
   }
 
+  bool wordMatchesAt(String word, int row, int col) {
+    /// Check horizontally
+    if (col + word.length <= widget.gridData[row].length) {
+      String rowWord = widget.gridData[row].skip(col).take(word.length).join('');
+      if (rowWord == word) return true;
+    }
+
+    /// Check vertically
+    if (row + word.length <= widget.gridData.length) {
+      String colWord = '';
+      for (int i = 0; i < word.length; i++) {
+        colWord += widget.gridData[row + i][col];
+      }
+      if (colWord == word) return true;
+    }
+
+    /// Check diagonally (top-left to bottom-right)
+    if (row + word.length <= widget.gridData.length && col + word.length <= widget.gridData[row].length) {
+      String diagWord = '';
+      for (int i = 0; i < word.length; i++) {
+        diagWord += widget.gridData[row + i][col + i];
+      }
+      if (diagWord == word) return true;
+    }
+
+    /// Check diagonally (top-right to bottom-left)
+    if (row + word.length <= widget.gridData.length && col - word.length >= -1) {
+      String diagWord = '';
+      for (int i = 0; i < word.length; i++) {
+        diagWord += widget.gridData[row + i][col - i];
+      }
+      if (diagWord == word) return true;
+    }
+
+    return false;
+  }
+
+  void highlightOccurrences(String word, int row, int col, List<List<bool>> highlightGrid) {
+    for (int i = 0; i < word.length; i++) {
+      highlightGrid[row][col] = true;
+      row++;
+      col++;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     gridHighlight = List.generate(
       widget.gridData.length,
-      (_) => List.filled(widget.gridData[0].length, false),
+          (_) => List.filled(widget.gridData[0].length, false),
     );
   }
 
